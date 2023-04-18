@@ -1,18 +1,21 @@
 from tkinter import *
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image, ImageEnhance
 
 class processImage:
     def __init__(self, filename):
+        self.origin_img = Image.open(filename)
         self.img = Image.open(filename)
         self.root = Tk()
         self.label = None
+        self.slide = None
         
         
     def showImage(self):
         
         #converter a imagem a ser mostrada
-        img_r = self.img.resize((1280,720))
+        img_r = self.img.resize((400,400))
         self.img = img_r
+        self.origin_img = img_r
         img_tk = ImageTk.PhotoImage(img_r)
         print(img_tk)
         
@@ -21,6 +24,12 @@ class processImage:
         self.label = Label(self.root, image=img_tk)
         self.label.bind("<Button 1>", self.click_zoom)
         self.label.pack()
+        
+        
+        #slide
+        self.slide = Scale(self.root, from_=-5, to=5, orient="horizontal", command=self.constraste)
+        self.slide.pack()
+        
         self.root.mainloop()
         
     def click_zoom(self, event):
@@ -44,7 +53,12 @@ class processImage:
         label_z.pack()
         root_z.mainloop()
         
-            
+    def constraste(self, value):
+        # print(value)
+        self.img = ImageEnhance.Contrast(self.origin_img).enhance((int(value)))
+        img_tk = ImageTk.PhotoImage(self.img)
+        self.label.config(image=img_tk)
+        self.label.image = img_tk
 
 # Carrega a imagem
 # img = Image.open("./mamografias/DleftCC/d_left_cc (1).png")
