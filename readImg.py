@@ -20,6 +20,7 @@ class processImage:
         print(img_tk)
         
         self.root.geometry("1280x720")
+        
         #criar widget de exibição
         self.label = Label(self.root, image=img_tk)
         self.label.bind("<Button 1>", self.click_zoom)
@@ -64,7 +65,7 @@ class processImage:
 # img = Image.open("./mamografias/DleftCC/d_left_cc (1).png")
 # img = img.resize((400, 400))
 
-zoom = processImage("./mamografias/DleftCC/d_left_cc (1).png")
+zoom = processImage("./imagem/arvore.png")
 zoom.showImage()
 
 
