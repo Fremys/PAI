@@ -1,6 +1,7 @@
 from tkinter import *
 from PIL import ImageTk, Image, ImageEnhance
 
+# Definindo classe para modificação da imagem
 class processImage:
     def __init__(self, filename):
         self.origin_img = Image.open(filename)
@@ -12,24 +13,29 @@ class processImage:
         
     def showImage(self):
         
-        #converter a imagem a ser mostrada
+        #padronizando o tamanho da imagem, mantendo sua proporção
         img_r = self.img.resize((400,400))
-        self.img = img_r
-        self.origin_img = img_r
-        img_tk = ImageTk.PhotoImage(img_r)
-        print(img_tk)
         
-        self.root.geometry("1280x720")
+        # self.img = img_r
+        # self.origin_img = img_r
+        
+        img_tk = ImageTk.PhotoImage(img_r)
+        
+        # self.root.geometry("1280x720")
+        
         
         #criar widget de exibição
         self.label = Label(self.root, image=img_tk)
-        self.label.bind("<Button 1>", self.click_zoom)
+        
+        # Definir função ao clique na tela
+        # self.label.bind("<Button 1>", self.click_zoom)
+        
+        # # empacotar mudanças
         self.label.pack()
         
-        
         #slide
-        self.slide = Scale(self.root, from_=-5, to=5, orient="horizontal", command=self.constraste)
-        self.slide.pack()
+        # self.slide = Scale(self.root, from_=-10, to=10, orient="horizontal", command=self.constraste)
+        # self.slide.pack()
         
         self.root.mainloop()
         
@@ -60,6 +66,13 @@ class processImage:
         img_tk = ImageTk.PhotoImage(self.img)
         self.label.config(image=img_tk)
         self.label.image = img_tk
+
+    # def zoomLevel(self, value):
+        
+        
+
+
+
 
 # Carrega a imagem
 # img = Image.open("./mamografias/DleftCC/d_left_cc (1).png")
