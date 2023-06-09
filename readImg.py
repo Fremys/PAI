@@ -65,7 +65,7 @@ class processImage:
 # img = Image.open("./mamografias/DleftCC/d_left_cc (1).png")
 # img = img.resize((400, 400))
 
-zoom = processImage("./imagem/arvore.png")
+zoom = processImage("./imagem/eliene.png")
 zoom.showImage()
 
 
