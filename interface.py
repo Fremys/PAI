@@ -7,8 +7,20 @@ from tensorflow.keras.preprocessing import image
 import numpy as np
 import tensorflow as tf
 
+import os
+import cv2
+import numpy as np
+from PIL import Image
+from keras.preprocessing.image import ImageDataGenerator
+import tensorflow as tf
+from IPython.display import clear_output as cls
+from tensorflow.keras.preprocessing import image
+import pandas as pd
+import matplotlib.pyplot as plt
+
 #Definindo classe para modificação da imagem
 class processImage:
+    
     def __init__(self, fileName, root):
         self.root = root
         
@@ -16,6 +28,7 @@ class processImage:
         self.img = Image.open(fileName)
         self.img_c = Image.open(fileName)
         self.img_cut = Image.open(fileName)
+        self.img_cut_c = Image.open(fileName)
         
         self.currentResult = None
         
@@ -31,12 +44,12 @@ class processImage:
         self.buttonSF = None
         self.buttonCN = None
         self.buttonCB = None
+        self.buttonSegment = None
         
         self.x_zoom = 200
         self.y_zoom = 200
         
         self.contrast_level = 1
-        
         
     def show(self):
         
@@ -57,7 +70,7 @@ class processImage:
         self.buttonSF.grid(column=2, row=5)
         
         #definir botão para execução da predição binária
-        self.buttonCB = Button(mainFrame, text="Classificação Binária",  borderwidth=2, command=self.detectedBinary )
+        self.buttonCB = Button(mainFrame, text="Classificação B",  borderwidth=2, command=self.detectedBinary )
         self.buttonCB.grid(column=3, row=5)
         
         #definir botão para execução da predição não binária
@@ -76,6 +89,10 @@ class processImage:
         #definir slide para contraste
         self.slide_c = Scale(mainFrame, width=15, from_=0, to=100, orient="horizontal", command=self.contrast)
         self.slide_c.grid(column=2,  row=4)
+        
+        # Segmentar a imagem
+        self.buttonSegment = Button(mainFrame, text="Segmentar",  borderwidth=2, command=self.segment_mammary_region)
+        self.buttonSegment.grid(column=1, row=4)
         
         #Definir descrição do zoom
         self.canvas_txt2 = Canvas(mainFrame, width=50, height=150)
@@ -98,6 +115,7 @@ class processImage:
         self.img = img_r
         self.img_c = img_r
         self.img_cut = img_r
+        self.img_cut_c = img_r
         
         new_img = ImageTk.PhotoImage(img_r)
         
@@ -113,6 +131,7 @@ class processImage:
             img_m_nc = ImageEnhance.Contrast(self.img).enhance(int(new_value))
             
             self.img_c = img_m_nc
+            self.img_cut_c = img_m_c
             
             new_img = ImageTk.PhotoImage(img_m_c)
             
@@ -147,7 +166,7 @@ class processImage:
         classBinaryPredict = ["I","II"]
         
         # Carrega a imagem e redimensiona
-        img = image.load_img(self.filePath, target_size=(256, 256, 3))
+        img = self.img_cut_c.resize((256,256))
 
         # Normaliza a imagem
         img_array = image.img_to_array(img)
@@ -191,7 +210,6 @@ class processImage:
             
             self.labelResult.config(text=self.currentResult)
             
-    
     def define_zoom(self, event):
         self.x_zoom = event.x 
         self.y_zoom = event.y
@@ -226,19 +244,59 @@ class processImage:
         
         
         img_cut = self.img_c.crop((0 if left < 0 else left, 0 if up < 0 else up, 400 if right > 400 else right, 400 if down > 400 else down))
-        # img_cut = self.img.crop((0, 0, 400, 400))
         
         img_z = img_cut.resize((400,400), Image.ANTIALIAS)
         
-        # img_m = ImageEnhance.Contrast(img_z).enhance(int(self.contrast_level))
         
         self.img_cut = img_z
+        self.img_cut_c = img_z
         
         new_img = ImageTk.PhotoImage(img_z)
         
         self.label.config(image=new_img)
         self.label.image = new_img
+    
+    def segment_mammary_region(self):
+        image = self.img_cut_c
         
+        # Converter a imagem para escala de cinza
+        image_gray = image.convert("L")
+
+        # Converter a imagem para um array NumPy
+        image_array = np.array(image_gray)
+
+        # Aplicar limiarização adaptativa para segmentar a região da mama
+        _, thresholded = cv2.threshold(
+            image_array, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Encontrar os contornos dos objetos na imagem binarizada
+        contours, _ = cv2.findContours(
+            thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Encontrar o contorno da mama (maior área)
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Criar uma máscara em branco do tamanho da imagem
+        mask = np.zeros_like(image_array)
+
+        # Desenhar o contorno da mama na máscara
+        cv2.drawContours(mask, [largest_contour], -1, (255), thickness=cv2.FILLED)
+
+        # Aplicar a máscara na imagem original usando a função bitwise_and
+        result_array = cv2.bitwise_and(image_array, image_array, mask=mask)
+
+        # Converter o array resultante de volta para uma imagem PIL
+        result_image = Image.fromarray(result_array)
+        
+        new_img = ImageTk.PhotoImage(result_image)
+            
+        # print(result_image)
+        
+        self.label.config(image=new_img)
+        self.label.image = new_img
+
+        
+    
 root = Tk()
 interface = processImage("./imagem/eliene.png", root)
 interface.show()
