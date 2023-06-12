@@ -1,15 +1,23 @@
 from tkinter import *
 from tkinter import ttk
 from PIL import ImageTk, Image, ImageEnhance
+from tkinter.filedialog import askopenfilename
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+import numpy as np
+import tensorflow as tf
 
 #Definindo classe para modificação da imagem
 class processImage:
     def __init__(self, fileName, root):
         self.root = root
         
+        self.filePath = fileName
         self.img = Image.open(fileName)
         self.img_c = Image.open(fileName)
         self.img_cut = Image.open(fileName)
+        
+        self.currentResult = None
         
         self.label = None
         
@@ -18,6 +26,11 @@ class processImage:
         
         self.label_txt1 = None
         self.canvas_txt2 = None
+        self.labelResult = None
+        
+        self.buttonSF = None
+        self.buttonCN = None
+        self.buttonCB = None
         
         self.x_zoom = 200
         self.y_zoom = 200
@@ -38,6 +51,18 @@ class processImage:
         mainFrame.grid(column=0, row=0, sticky=(N, W, E, S))
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
+        
+        #definir botão para seleção do arquivo
+        self.buttonSF = Button(mainFrame, text="imagem", borderwidth=2, command=self.selected_file) 
+        self.buttonSF.grid(column=2, row=5)
+        
+        #definir botão para execução da predição binária
+        self.buttonCB = Button(mainFrame, text="Classificação Binária",  borderwidth=2, command=self.detectedBinary )
+        self.buttonCB.grid(column=3, row=5)
+        
+        #definir botão para execução da predição não binária
+        self.buttonCB = Button(mainFrame, text="Classificação",  borderwidth=2, command=self.detectedNoBinnary )
+        self.buttonCB.grid(column=3, row=6)
         
         #definir componente para exibição da imagem
         self.label = Label(mainFrame, image=new_img, borderwidth=2, relief="sunken")
@@ -61,6 +86,9 @@ class processImage:
         self.slide_z = Scale(mainFrame, width=15, from_=1, to=100, orient="vertical", command=self.zoom)
         self.slide_z.grid(column=4, row=2)
         
+        #Definir label para resultado
+        self.labelResult= Label(mainFrame, text=self.currentResult, font="Courier", height=2)
+        self.labelResult.grid(column=2, row=1)
         
         self.root.mainloop()
         
@@ -91,14 +119,82 @@ class processImage:
             self.label.config(image=new_img)
             self.label.image = new_img
                 
-                
+    def selected_file(self):
+        # Abrir o diálogo de seleção de arquivo
+        file_path = askopenfilename()
+        
+        if file_path:
+            # Salvar caminho da imagem
+            self.filePath = file_path
+            
+            #Abrir imagem e salvá-la globalmente
+            self.img = Image.open(file_path)
+            
+            #Abrir imagem na interface gráfica
+            new_img = self.trow_img()
+            self.label.config(image=new_img)
+            self.label.image = new_img
+    
+    def detectedBinary(self):
+        self.classDetected(True)
+    
+    def detectedNoBinnary(self):
+        self.classDetected(False)
+    
+    def classDetected(self, b):
+        # Definir possíveis calssesClass Names
+        classPredict = ["D", "E", "F", "G"]
+        classBinaryPredict = ["I","II"]
+        
+        # Carrega a imagem e redimensiona
+        img = image.load_img(self.filePath, target_size=(256, 256, 3))
+
+        # Normaliza a imagem
+        img_array = image.img_to_array(img)
+        img_array /= 255.
+
+        # Cria um objeto EagerTensor a partir da imagem normalizada
+        img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
+
+        # Adiciona uma dimensão extra para o modelo
+        img_tensor = tf.expand_dims(img_tensor, axis=0)
+        
+        #verificar se a classificação é binária ou não
+        if(b):
+            # Carrega o modelo
+            model = load_model('ResNet50Binary.h5', encoding='latin1')
+
+            # Faz a predição na imagem
+            predictions = model.predict(img_tensor)
+
+            # Converte a saída para um rótulo de texto
+            # SELECIONAR A CLASSE - BINARIA OU COM 4 CLASSES (classe,classeBinary)
+            predicted_label = classBinaryPredict[np.argmax(predictions)]
+
+            # Exibe a classe prevista
+            self.currentResult = predicted_label
+            
+            self.labelResult.config(text=self.currentResult)
+        else:
+            # Carrega o modelo
+            model = load_model('ResNet50.h5')
+            
+            # Faz a predição na imagem
+            predictions = model.predict(img_tensor)
+
+            # Converte a saída para um rótulo de texto
+            # SELECIONAR A CLASSE - BINARIA OU COM 4 CLASSES (classe,classeBinary)
+            predicted_label = classPredict[np.argmax(predictions)]
+            
+            # Exibe a classe prevista
+            self.currentResult = predicted_label
+            
+            self.labelResult.config(text=self.currentResult)
+            
     
     def define_zoom(self, event):
         self.x_zoom = event.x 
         self.y_zoom = event.y
-        
-        print("x: ", self.x_zoom)
-        print("y: ", self.y_zoom)
     
     def zoom(self, value):
         
@@ -110,8 +206,6 @@ class processImage:
         down = self.y_zoom+calc_zoom
         right = self.x_zoom+calc_zoom
         left = self.x_zoom-calc_zoom
-        
-        print("calc_zoom ", calc_zoom)
         
         if(left <= 0):
             left = 0
@@ -129,11 +223,6 @@ class processImage:
             if(down >= 400):
                 down = 400
                 up -= calc_zoom
-                
-        print("left = ", left)
-        print("up = ", up)
-        print("right = ", right)
-        print("down = ", down)
         
         
         img_cut = self.img_c.crop((0 if left < 0 else left, 0 if up < 0 else up, 400 if right > 400 else right, 400 if down > 400 else down))
