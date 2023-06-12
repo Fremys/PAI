@@ -30,7 +30,7 @@ class processImage:
         self.img_cut = Image.open(fileName)
         self.img_cut_c = Image.open(fileName)
         
-        self.currentResult = None
+        self.currentResult = ""
         
         self.label = None
         
@@ -103,6 +103,10 @@ class processImage:
         self.slide_z = Scale(mainFrame, width=15, from_=1, to=100, orient="vertical", command=self.zoom)
         self.slide_z.grid(column=4, row=2)
         
+        #Definir label para resultado
+        self.labelResult= Label(mainFrame, text="RESULTADO", font="Courier", height=4)
+        self.labelResult.grid(column=2, row=0)
+
         #Definir label para resultado
         self.labelResult= Label(mainFrame, text=self.currentResult, font="Courier", height=2)
         self.labelResult.grid(column=2, row=1)
