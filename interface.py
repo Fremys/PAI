@@ -6,6 +6,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 import numpy as np
 import tensorflow as tf
+import time
 
 import os
 import cv2
@@ -31,8 +32,10 @@ class processImage:
         self.img_cut_c = Image.open(fileName)
         
         self.currentResult = ""
+        self.time_execution_current = 0
         
         self.label = None
+        self.label_time_execution = None
         
         self.slide_c = None
         self.slide_z = None
@@ -111,6 +114,10 @@ class processImage:
         self.labelResult= Label(mainFrame, text=self.currentResult, font="Courier", height=2)
         self.labelResult.grid(column=2, row=1)
         
+        #Definir label para tempo de execução
+        self.label_time_execution = Label(mainFrame, text="Tempo: " + str(self.time_execution_current), font="Courier", height=3)
+        self.label_time_execution.grid(column=1, row=4)
+        
         self.root.mainloop()
         
     def trow_img(self):
@@ -165,7 +172,7 @@ class processImage:
         self.classDetected(False)
     
     def classDetected(self, b):
-        # Definir possíveis calssesClass Names
+        # Definir possíveis classes names
         classPredict = ["D", "E", "F", "G"]
         classBinaryPredict = ["I","II"]
         
@@ -182,10 +189,13 @@ class processImage:
         # Adiciona uma dimensão extra para o modelo
         img_tensor = tf.expand_dims(img_tensor, axis=0)
         
-        #verificar se a classificação é binária ou não
+        #marcar tempo de inicio
+        init_time = time.time()
+        
+        # Verificar se a classificação é binária ou não
         if(b):
             # Carrega o modelo
-            model = load_model('ResNet50Binary.h5', encoding='latin1')
+            model = load_model('ResNet50Binary.h5')
 
             # Faz a predição na imagem
             predictions = model.predict(img_tensor)
@@ -213,6 +223,15 @@ class processImage:
             self.currentResult = predicted_label
             
             self.labelResult.config(text=self.currentResult)
+            
+        #marcar tempo apos execução
+        time_end = time.time()
+        #salvar tempo de execução
+        self.time_execution_current_time = time_end - init_time
+        
+        print(self.time_execution_current_time)
+        print("=============================================================================")
+        self.label_time_execution.config(text="Tempo: " + self.time_execution_current_time)
             
     def define_zoom(self, event):
         self.x_zoom = event.x 
