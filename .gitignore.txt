@@ -1,2 +1,4 @@
 # dependencies
-mamografias/
+/mamografias
+/Test_Data
+/Train_Data

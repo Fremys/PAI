@@ -10,16 +10,11 @@ import numpy as np
 import tensorflow as tf
 import time
 
-import os
 import cv2
 import numpy as np
 from PIL import Image
-from keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
-from IPython.display import clear_output as cls
 from tensorflow.keras.preprocessing import image
-import pandas as pd
-import matplotlib.pyplot as plt
 
 #Definindo classe para modificação da imagem
 class processImage:
@@ -123,6 +118,7 @@ class processImage:
         self.root.mainloop()
         
     def trow_img(self):
+        # redimensionar imagens
         img_r = self.img.resize((400,400))
         
         self.img = img_r
@@ -130,24 +126,31 @@ class processImage:
         self.img_cut = img_r
         self.img_cut_c = img_r
         
+        #converter imagem principal
         new_img = ImageTk.PhotoImage(img_r)
         
         return new_img
     
     def contrast(self, value):
-        
+        # nomrmalizar valor do zoom
         new_value = 1 if value == "0" else int(value)
+        # salvar ultimo valor de constraste
         self.contrast_level = new_value
         
+        # verificar se o constraste é outro
         if(new_value != 0):
+            #  aplicar constraste
             img_m_c = ImageEnhance.Contrast(self.img_cut).enhance(int(new_value))
             img_m_nc = ImageEnhance.Contrast(self.img).enhance(int(new_value))
             
+            #salavar imagem com constraste para aplicação
             self.img_c = img_m_nc
             self.img_cut_c = img_m_c
             
+            #converter imagem para mostrar na tela
             new_img = ImageTk.PhotoImage(img_m_c)
             
+            #mostrar na tela
             self.label.config(image=new_img)
             self.label.image = new_img
                 
@@ -177,9 +180,11 @@ class processImage:
         # Definir possíveis classes names
         classPredict = ["D", "E", "F", "G"]
         classBinaryPredict = ["I","II"]
+
+        self.img_cut_c.save('nova_imagem.png')
         
-        # Carrega a imagem e redimensiona
-        img = self.img_cut_c.resize((256,256))
+       # Carrega a imagem e redimensiona
+        img = image.load_img('nova_imagem.png', target_size=(256, 256, 3))
 
         # Normaliza a imagem
         img_array = image.img_to_array(img)
@@ -230,10 +235,7 @@ class processImage:
         time_end = time.time()
         #salvar tempo de execução
         self.time_execution_current_time = time_end - init_time
-        
-        print(self.time_execution_current_time)
-        print("=============================================================================")
-        self.label_time_execution.config(text="Tempo: " + self.time_execution_current_time)
+        self.label_time_execution.config(text="Tempo: " + str(self.time_execution_current_time))
             
     def define_zoom(self, event):
         self.x_zoom = event.x 
@@ -241,15 +243,19 @@ class processImage:
     
     def zoom(self, value):
         
+        # normalizar o valor do zoom
         value_convert = (int(value)/100) * 200
         
+        # dar zoom na foto
         calc_zoom = 200 - int(value_convert)
         
+        # verificar se o zoom esta passando dos limites da tela e recalcular
         up = self.y_zoom-calc_zoom
         down = self.y_zoom+calc_zoom
         right = self.x_zoom+calc_zoom
         left = self.x_zoom-calc_zoom
         
+        # recalcular
         if(left <= 0):
             left = 0
             right += calc_zoom
@@ -267,17 +273,18 @@ class processImage:
                 down = 400
                 up -= calc_zoom
         
-        
+        # dar o zoom fazendo o corte na imagem
         img_cut = self.img_c.crop((0 if left < 0 else left, 0 if up < 0 else up, 400 if right > 400 else right, 400 if down > 400 else down))
-        
+        #redmiensionar para ampliação da area do zoom
         img_z = img_cut.resize((400,400), Image.ANTIALIAS)
-        
-        
+        #slavar imagem cortada para aplicação do contraste
         self.img_cut = img_z
         self.img_cut_c = img_z
         
+        # converter imagem para mostra-la na tela
         new_img = ImageTk.PhotoImage(img_z)
         
+        #mostrar imagem na tela
         self.label.config(image=new_img)
         self.label.image = new_img
     
@@ -321,7 +328,7 @@ class processImage:
         self.label.image = new_img
 
         
-    
+# criar interface
 root = Tk()
 interface = processImage("./imagem/eliene.png", root)
 interface.show()
